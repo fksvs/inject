@@ -60,8 +60,9 @@ Example Usages
 
 License
 ----------
-[GNU General Public License Version 3][]
+This library is free software; you can redistribute it and/or modify it under the terms of the GPLv3 license.
+See [LICENSE][] for details.
 
 [GitHub]: https://github.com/fksvs/inject
 [GitLab]: https://gitlab.com/fksvs/inject
-[GNU General Public License Version 3]: https://www.gnu.org/licenses/gpl-3.0.en.html
+[LICENSE]: https://www.gnu.org/licenses/gpl-3.0.en.html
