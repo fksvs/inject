@@ -30,8 +30,8 @@ static unsigned short protocol;
 static int count = 1, verbose = 0, src_mac_control = 0, dst_mac_control = 0;
 static char *file_name = NULL, *iface = NULL;
 
-void set_eth(char *buffer, unsigned char *dst, unsigned char *src,
-	     unsigned short proto, char *payload, size_t payload_size)
+void build_eth(char *buffer, unsigned char *dst, unsigned char *src,
+	       unsigned short proto, char *payload, size_t payload_size)
 {
 	eth_hdr *ethh = (eth_hdr *)buffer;
 	char *ptr = (buffer + sizeof(eth_hdr));
@@ -40,6 +40,26 @@ void set_eth(char *buffer, unsigned char *dst, unsigned char *src,
 	memcpy(ethh->dst, dst, 6);
 	memcpy(ethh->src, src, 6);
 	ethh->protocol = htons(proto);
+}
+
+static void validate_eth(int sockfd)
+{
+	if (!iface)
+		err_exit("network interface not specified.");
+
+	if (!src_mac_control) {
+		struct ifreq ifr;
+		memset(&ifr, 0, sizeof(struct ifreq));
+
+		memcpy(ifr.ifr_name, iface, strlen(iface));
+		if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == -1)
+			err_msg("eth.c", "inject_eth", __LINE__, errno);
+
+		memcpy(src_mac, ifr.ifr_hwaddr.sa_data, 6);
+	}
+
+	if (!dst_mac_control)
+		memset(dst_mac, 0xff, 6);
 }
 
 static void usage()
@@ -99,7 +119,6 @@ static void parser(int argc, char *argv[])
 void inject_eth(int argc, char *argv[])
 {
 	char buffer[BUFF_SIZE], *payload;
-	struct ifreq ifr;
 	struct sockaddr_ll device;
 	int sockfd, ind, len;
 	size_t payload_size = 0;
@@ -107,25 +126,12 @@ void inject_eth(int argc, char *argv[])
 	parser(argc, argv);
 
 	memset(buffer, 0, BUFF_SIZE);
-	memset(&ifr, 0, sizeof(struct ifreq));
 	memset(&device, 0, sizeof(struct sockaddr_ll));
 
 	if ((sockfd = init_packet_socket()) == -1)
 		exit(EXIT_FAILURE);
 
-	if (!iface)
-		err_exit("network interface not specified.");
-
-	if (!src_mac_control) {
-		memcpy(ifr.ifr_name, iface, strlen(iface));
-		if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == -1)
-			err_msg("eth.c", "inject_eth", __LINE__, errno);
-
-		memcpy(src_mac, ifr.ifr_hwaddr.sa_data, 6);
-	}
-
-	if (!dst_mac_control)
-		memset(dst_mac, 0xff, 6);
+	validate_eth(sockfd);
 
 	if ((device.sll_ifindex = if_nametoindex(iface)) == 0)
 		err_msg("eth.c", "inject_eth", __LINE__, errno);
@@ -139,7 +145,7 @@ void inject_eth(int argc, char *argv[])
 		payload_size = strlen(payload);
 	}
 
-	set_eth(buffer, dst_mac, src_mac, protocol, payload, payload_size);
+	build_eth(buffer, dst_mac, src_mac, protocol, payload, payload_size);
 
 	len = sizeof(eth_hdr) + payload_size;
 	for (ind = 0; ind < count; ind += 1)

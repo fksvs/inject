@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
 
 #include "error_func.h"
 #include "eth.h"
@@ -26,18 +25,22 @@ void parser(int argc, char *argv[])
 
 	if (!strcmp(argv[1], "sniff"))
 		sniff_network(argc, argv);
-	if (!strcmp(argv[1], "eth"))
+	else if (!strcmp(argv[1], "eth"))
 		inject_eth(argc, argv);
-	if (!strcmp(argv[1], "arp"))
+	else if (!strcmp(argv[1], "arp"))
 		inject_arp(argc, argv);
-	if (!strcmp(argv[1], "ip"))
+	else if (!strcmp(argv[1], "ip"))
 		inject_ip(argc, argv);
-	if (!strcmp(argv[1], "icmp"))
+	else if (!strcmp(argv[1], "icmp"))
 		inject_icmp(argc, argv);
-	if (!strcmp(argv[1], "tcp"))
+	else if (!strcmp(argv[1], "tcp"))
 		inject_tcp(argc, argv);
-	if (!strcmp(argv[1], "udp"))
+	else if (!strcmp(argv[1], "udp"))
 		inject_udp(argc, argv);
+	else {
+		printf("protocol/mode not found.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	while ((opt = getopt(argc, argv, "gh")) != -1) {
 		switch (opt) {

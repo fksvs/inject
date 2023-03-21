@@ -42,19 +42,24 @@ static void output_packet(char *buffer, int fl)
 		case 1:
 			if ((fl & ICMP_FLAG) == ICMP_FLAG) {
 				icmp_hdr *icmph =
-					(icmp_hdr *)(buffer + sizeof(eth_hdr) + sizeof(ip_hdr));
+					(icmp_hdr *)(buffer + sizeof(eth_hdr) +
+						     sizeof(ip_hdr));
 				print_icmp(icmph);
 			}
 			break;
 		case 6:
 			if ((fl & TCP_FLAG) == TCP_FLAG) {
-				tcp_hdr *tcph = (tcp_hdr *)(buffer + sizeof(eth_hdr) + sizeof(ip_hdr));
+				tcp_hdr *tcph =
+					(tcp_hdr *)(buffer + sizeof(eth_hdr) +
+						    sizeof(ip_hdr));
 				print_tcp(tcph);
 			}
 			break;
 		case 17:
 			if ((fl & UDP_FLAG) == UDP_FLAG) {
-				udp_hdr *udph = (udp_hdr *)(buffer + sizeof(eth_hdr) + sizeof(ip_hdr));
+				udp_hdr *udph =
+					(udp_hdr *)(buffer + sizeof(eth_hdr) +
+						    sizeof(ip_hdr));
 				print_udp(udph);
 			}
 			break;

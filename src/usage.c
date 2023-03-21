@@ -2,8 +2,7 @@
 
 void main_usage()
 {
-	printf("\n usage : ./inject [protocols/modes] [options]\n\n\
- protocols :\n\
+	printf("\n usage : ./inject [protocol/mode] [options]\n\n protocols :\n\
 \teth : eth packets\n\
 \tarp : arp packets\n\
 \tip : ip packets\n\
@@ -40,8 +39,8 @@ void sniff_usage()
 void eth_usage()
 {
 	printf("\n ETH options :\n\n\
-\t-M [mac address] : source mac address (in XX:XX:XX:XX:XX:XX format)\n\
-\t-K [mac address] : destination mac address (in XX:XX:XX:XX:XX:XX format)\n\
+\t-M [mac address] : source mac address\n\
+\t-K [mac address] : destination mac address\n\
 \t-p [protocol] : protocol\n\
 \t-a [file name] : payload file\n");
 }
@@ -49,8 +48,8 @@ void eth_usage()
 void arp_usage()
 {
 	printf("\n ARP options :\n\n\
-\t-M [mac address] : source mac address (in XX:XX:XX:XX:XX:XX format)\n\
-\t-K [mac address] : destination mac address (in XX:XX:XX:XX:XX:XX format)\n\
+\t-M [mac address] : source mac address\n\
+\t-K [mac address] : destination mac address\n\
 \t-S [ip address] : source ip address\n\
 \t-D [ip address] : destination ip address\n\
 \t-r [operation] : ARP operation\n");

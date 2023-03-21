@@ -31,9 +31,9 @@ static unsigned short oper;
 static int count = 1, verbose = 0, src_mac_control = 0, dst_mac_control = 0;
 static char *iface = NULL;
 
-void set_arp(char *buffer, unsigned char *source_mac, unsigned char *source_ip,
-	     unsigned char *target_mac, unsigned char *target_ip,
-	     unsigned short oper)
+void build_arp(char *buffer, unsigned char *source_mac,
+	       unsigned char *source_ip, unsigned char *target_mac,
+	       unsigned char *target_ip, unsigned short oper)
 {
 	arp_hdr *arph = (arp_hdr *)(buffer + sizeof(eth_hdr));
 
@@ -43,9 +43,36 @@ void set_arp(char *buffer, unsigned char *source_mac, unsigned char *source_ip,
 	arph->plen = 4;
 	arph->oper = htons(oper);
 	memcpy(arph->src_mac, source_mac, 6);
-	inet_pton(AF_INET, (const char *)source_ip, &arph->src_ip);
+	if (!source_ip) {
+		struct in_addr addr = { get_address() };
+		inet_pton(AF_INET, (const char *)inet_ntoa(addr),
+			  &arph->src_ip);
+	} else
+		inet_pton(AF_INET, (const char *)source_ip, &arph->src_ip);
 	memcpy(arph->dst_mac, target_mac, 6);
 	inet_pton(AF_INET, (const char *)target_ip, &arph->dst_ip);
+}
+
+static void validate_arp(int sockfd)
+{
+	if (!iface)
+		err_exit("network interface not specified.");
+	if (!dst_ip)
+		err_exit("destination ip address not specified.");
+
+	if (!src_mac_control) {
+		struct ifreq ifr;
+		memset(&ifr, 0, sizeof(struct ifreq));
+
+		memcpy(ifr.ifr_name, iface, strlen(iface));
+		if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == -1)
+			err_msg("arp.c", "inject_arp", __LINE__, errno);
+
+		memcpy(src_mac, ifr.ifr_hwaddr.sa_data, 6);
+	}
+
+	if (!dst_mac_control)
+		memset(dst_mac, 0xff, 6);
 }
 
 static void usage()
@@ -107,36 +134,18 @@ static void parser(int argc, char *argv[])
 void inject_arp(int argc, char *argv[])
 {
 	char buffer[BUFF_SIZE];
-	struct ifreq ifr;
 	struct sockaddr_ll device;
 	int sockfd, ind, len;
 
 	parser(argc, argv);
 
-	if (!src_ip)
-		err_exit("source ip address not specified.");
-	if (!dst_ip)
-		err_exit("destination ip address not specified.");
-	if (!iface)
-		err_exit("network interface not specified.");
-
 	memset(buffer, 0, BUFF_SIZE);
-	memset(&ifr, 0, sizeof(struct ifreq));
 	memset(&device, 0, sizeof(struct sockaddr_ll));
 
 	if ((sockfd = init_packet_socket()) == -1)
 		exit(EXIT_FAILURE);
 
-	if (!src_mac_control) {
-		memcpy(ifr.ifr_name, iface, strlen(iface));
-		if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == -1)
-			err_msg("arp.c", "inject_arp", __LINE__, errno);
-
-		memcpy(src_mac, ifr.ifr_hwaddr.sa_data, 6);
-	}
-
-	if (!dst_mac_control)
-		memset(dst_mac, 0xff, 6);
+	validate_arp(sockfd);
 
 	if ((device.sll_ifindex = if_nametoindex(iface)) == 0)
 		err_msg("arp.c", "inject_arp", __LINE__, errno);
@@ -144,8 +153,8 @@ void inject_arp(int argc, char *argv[])
 	memcpy(device.sll_addr, src_mac, 6);
 	device.sll_halen = 6;
 
-	set_eth(buffer, dst_mac, src_mac, ETH_P_ARP, NULL, 0);
-	set_arp(buffer, src_mac, src_ip, dst_mac, dst_ip, oper);
+	build_eth(buffer, dst_mac, src_mac, ETH_P_ARP, NULL, 0);
+	build_arp(buffer, src_mac, src_ip, dst_mac, dst_ip, oper);
 
 	len = sizeof(eth_hdr) + sizeof(arp_hdr);
 	for (ind = 0; ind < count; ind += 1)

@@ -23,8 +23,8 @@ static unsigned char ttl, service = 0, icmp_type, icmp_code;
 static int count = 1, verbose = 0;
 static char *iface = NULL;
 
-void set_icmp(char *buffer, unsigned char type, unsigned char code,
-	      unsigned short seq)
+void build_icmp(char *buffer, unsigned char type, unsigned char code,
+		unsigned short seq)
 {
 	icmp_hdr *icmph = (icmp_hdr *)(buffer + sizeof(ip_hdr));
 
@@ -34,6 +34,12 @@ void set_icmp(char *buffer, unsigned char type, unsigned char code,
 	icmph->id = htons(getpid());
 	icmph->check = 0;
 	icmph->check = checksum((unsigned short *)icmph, sizeof(icmp_hdr));
+}
+
+static void validate_icmp()
+{
+	if (!dst_addr)
+		err_exit("destination address not specified.");
 }
 
 static void usage()
@@ -97,8 +103,6 @@ void inject_icmp(int argc, char *argv[])
 	int sockfd, ind;
 
 	parser(argc, argv);
-	if (!dst_addr)
-		err_exit("destination address not specified.");
 
 	memset(buffer, 0, BUFF_SIZE);
 	memset(&sock_dst, 0, sizeof(struct sockaddr_in));
@@ -106,14 +110,16 @@ void inject_icmp(int argc, char *argv[])
 	if ((sockfd = init_socket()) == -1)
 		exit(EXIT_FAILURE);
 
+	validate_icmp();
+
 	if (iface)
 		bind_iface(sockfd, iface);
 
 	sock_dst.sin_family = AF_INET;
 	inet_pton(AF_INET, (const char *)dst_addr, &sock_dst.sin_addr.s_addr);
 
-	set_ip(buffer, 0, src_addr, dst_addr, ttl, service, IPPROTO_ICMP);
-	set_icmp(buffer, icmp_type, icmp_code, 0);
+	build_ip(buffer, 0, src_addr, dst_addr, ttl, service, IPPROTO_ICMP);
+	build_icmp(buffer, icmp_type, icmp_code, 0);
 
 	ip_hdr *iph = (ip_hdr *)buffer;
 	for (ind = 0; ind < count; ind += 1)

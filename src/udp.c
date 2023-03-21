@@ -27,8 +27,8 @@ static unsigned short src_port, dst_port;
 static int count = 1, verbose = 0;
 static char *file_name = NULL, *iface = NULL;
 
-static unsigned short udp_check(ip_hdr *iph, udp_hdr *udph,
-				char *payload, size_t payload_size)
+static unsigned short udp_check(ip_hdr *iph, udp_hdr *udph, char *payload,
+				size_t payload_size)
 {
 	psd_hdr psh;
 	char *psd;
@@ -57,8 +57,8 @@ static unsigned short udp_check(ip_hdr *iph, udp_hdr *udph,
 	return check;
 }
 
-void set_udp(char *buffer, char *payload, size_t payload_size,
-	     unsigned short src, unsigned short dst)
+void build_udp(char *buffer, char *payload, size_t payload_size,
+	       unsigned short src, unsigned short dst)
 {
 	ip_hdr *iph = (ip_hdr *)buffer;
 	udp_hdr *udph = (udp_hdr *)(buffer + sizeof(ip_hdr));
@@ -70,6 +70,12 @@ void set_udp(char *buffer, char *payload, size_t payload_size,
 	udph->length = htons(sizeof(udp_hdr) + payload_size);
 	udph->check = 0;
 	udph->check = udp_check(iph, udph, payload, payload_size);
+}
+
+static void validate_udp()
+{
+	if (!dst_addr)
+		err_exit("destination address not specified.");
 }
 
 static void usage()
@@ -137,8 +143,6 @@ void inject_udp(int argc, char *argv[])
 	size_t payload_size = 0;
 
 	parser(argc, argv);
-	if (!dst_addr)
-		err_exit("destination address not specified.");
 
 	srand(time(NULL));
 	memset(buffer, 0, BUFF_SIZE);
@@ -146,6 +150,8 @@ void inject_udp(int argc, char *argv[])
 
 	if ((sockfd = init_socket()) == -1)
 		exit(EXIT_FAILURE);
+
+	validate_udp();
 
 	if (iface)
 		bind_iface(sockfd, iface);
@@ -160,9 +166,9 @@ void inject_udp(int argc, char *argv[])
 		payload_size = strlen(payload);
 	}
 
-	set_ip(buffer, payload_size, src_addr, dst_addr, ttl, service,
-	       IPPROTO_UDP);
-	set_udp(buffer, payload, payload_size, src_port, dst_port);
+	build_ip(buffer, payload_size, src_addr, dst_addr, ttl, service,
+		 IPPROTO_UDP);
+	build_udp(buffer, payload, payload_size, src_port, dst_port);
 
 	ip_hdr *iph = (ip_hdr *)buffer;
 	for (ind = 0; ind < count; ind += 1)
@@ -177,7 +183,7 @@ void inject_udp(int argc, char *argv[])
 
 	if (file_name)
 		free(payload);
-	close_sock(sockfd);
 
+	close_sock(sockfd);
 	exit(EXIT_SUCCESS);
 }

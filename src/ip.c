@@ -23,9 +23,9 @@ static unsigned char ttl, service = 0;
 static int count = 1, verbose = 0;
 static char *iface = NULL;
 
-void set_ip(char *buffer, size_t payload_size, unsigned char src[4],
-	    unsigned char dst[4], unsigned char ttl, unsigned char service,
-	    unsigned char protocol)
+void build_ip(char *buffer, size_t payload_size, unsigned char *src,
+	      unsigned char *dst, unsigned char ttl, unsigned char service,
+	      unsigned char protocol)
 {
 	ip_hdr *iph = (ip_hdr *)buffer;
 
@@ -38,7 +38,7 @@ void set_ip(char *buffer, size_t payload_size, unsigned char src[4],
 		iph->length += sizeof(tcp_hdr);
 		break;
 	case IPPROTO_UDP:
-		iph->length += sizeof(tcp_hdr);
+		iph->length += sizeof(udp_hdr);
 		break;
 	}
 	iph->length += payload_size;
@@ -50,11 +50,19 @@ void set_ip(char *buffer, size_t payload_size, unsigned char src[4],
 	iph->ttl = (ttl) ? ttl : DEFAULT_TTL;
 	iph->protocol = protocol;
 	iph->check = 0;
-	if (!src)
-		inet_pton(AF_INET, (const char *)get_address, &src);
-	inet_pton(AF_INET, (const char *)src, &iph->src);
+	if (!src) {
+		struct in_addr addr = { get_address() };
+		inet_pton(AF_INET, (const char *)inet_ntoa(addr), &iph->src);
+	} else
+		inet_pton(AF_INET, (const char *)src, &iph->src);
 	inet_pton(AF_INET, (const char *)dst, &iph->dst);
 	iph->check = checksum((unsigned short *)iph, iph->length);
+}
+
+static void validate_ip()
+{
+	if (!dst_addr)
+		err_exit("destination address not specified.");
 }
 
 static void usage()
@@ -111,8 +119,6 @@ void inject_ip(int argc, char *argv[])
 	int sockfd, ind;
 
 	parser(argc, argv);
-	if (!dst_addr)
-		err_exit("destination address not specified.");
 
 	memset(buffer, 0, BUFF_SIZE);
 	memset(&sock_dst, 0, sizeof(struct sockaddr_in));
@@ -120,13 +126,15 @@ void inject_ip(int argc, char *argv[])
 	if ((sockfd = init_socket()) == -1)
 		exit(EXIT_FAILURE);
 
+	validate_ip();
+
 	if (iface)
 		bind_iface(sockfd, iface);
 
 	sock_dst.sin_family = AF_INET;
 	inet_pton(AF_INET, (const char *)dst_addr, &sock_dst.sin_addr.s_addr);
 
-	set_ip(buffer, 0, src_addr, dst_addr, ttl, service, 0);
+	build_ip(buffer, 0, src_addr, dst_addr, ttl, service, 0);
 
 	ip_hdr *iph = (ip_hdr *)buffer;
 	for (ind = 0; ind < count; ind += 1)

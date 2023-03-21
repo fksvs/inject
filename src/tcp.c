@@ -27,8 +27,8 @@ static unsigned short src_port, dst_port;
 static int count = 1, verbose = 0;
 static char *file_name = NULL, *iface = NULL;
 
-static unsigned short tcp_check(ip_hdr *iph, tcp_hdr *tcph,
-				char *payload, size_t payload_size)
+static unsigned short tcp_check(ip_hdr *iph, tcp_hdr *tcph, char *payload,
+				size_t payload_size)
 {
 	psd_hdr psh;
 	char *psd;
@@ -57,9 +57,9 @@ static unsigned short tcp_check(ip_hdr *iph, tcp_hdr *tcph,
 	return check;
 }
 
-void set_tcp(char *buffer, char *payload, size_t payload_size,
-	     unsigned short src, unsigned short dst, unsigned char flag,
-	     unsigned int seq, unsigned int ack)
+void build_tcp(char *buffer, char *payload, size_t payload_size,
+	       unsigned short src, unsigned short dst, unsigned char flag,
+	       unsigned int seq, unsigned int ack)
 {
 	ip_hdr *iph = (ip_hdr *)buffer;
 	tcp_hdr *tcph = (tcp_hdr *)(buffer + sizeof(ip_hdr));
@@ -76,6 +76,12 @@ void set_tcp(char *buffer, char *payload, size_t payload_size,
 	tcph->check = 0;
 	tcph->urgp = 0x0;
 	tcph->check = tcp_check(iph, tcph, payload, payload_size);
+}
+
+static void validate_tcp()
+{
+	if (!dst_addr)
+		err_exit("destination address not specified.");
 }
 
 static void usage()
@@ -157,8 +163,6 @@ void inject_tcp(int argc, char *argv[])
 	size_t payload_size = 0;
 
 	parser(argc, argv);
-	if (!dst_addr)
-		err_exit("destination address not specified.");
 
 	srand(time(NULL));
 	memset(buffer, 0, BUFF_SIZE);
@@ -166,6 +170,8 @@ void inject_tcp(int argc, char *argv[])
 
 	if ((sockfd = init_socket()) == -1)
 		exit(EXIT_FAILURE);
+
+	validate_tcp();
 
 	if (iface)
 		bind_iface(sockfd, iface);
@@ -180,10 +186,10 @@ void inject_tcp(int argc, char *argv[])
 		payload_size = strlen(payload);
 	}
 
-	set_ip(buffer, payload_size, src_addr, dst_addr, ttl, service,
-	       IPPROTO_TCP);
-	set_tcp(buffer, payload, payload_size, src_port, dst_port, tcp_flag, 1,
-		1);
+	build_ip(buffer, payload_size, src_addr, dst_addr, ttl, service,
+		 IPPROTO_TCP);
+	build_tcp(buffer, payload, payload_size, src_port, dst_port, tcp_flag,
+		  1, 1);
 
 	ip_hdr *iph = (ip_hdr *)buffer;
 	for (ind = 0; ind < count; ind += 1)
@@ -198,7 +204,7 @@ void inject_tcp(int argc, char *argv[])
 
 	if (file_name)
 		free(payload);
-	close_sock(sockfd);
 
+	close_sock(sockfd);
 	exit(EXIT_SUCCESS);
 }

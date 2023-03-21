@@ -1,6 +1,8 @@
+# ignore swap files that vi creates
 *.swp
 
+# ignore object files
 *.o
 
+# ignore executable
 *.out
-*.app
