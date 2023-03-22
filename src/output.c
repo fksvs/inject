@@ -8,43 +8,39 @@
 #include "output.h"
 #include "type.h"
 
-void print_eth(eth_hdr *eth)
+static void print_mac_address(unsigned char *mac)
 {
 	int ind;
 
+	for (ind = 0; ind < 5; ind += 1)
+		printf("%.2x:", mac[ind]);
+	printf("%.2x", mac[5]);
+}
+
+static void print_ip_address(unsigned char *addr)
+{
+	printf("%u.%u.%u.%u", addr[0], addr[1], addr[2], addr[3]);
+}
+
+void print_eth(eth_hdr *eth)
+{
 	printf("ethernet | ");
-
-	for (ind = 0; ind < 5; ind += 1)
-		printf("%.2x:", eth->src[ind]);
-	printf("%.2x", eth->src[5]);
-
+	print_mac_address(eth->src);
 	printf(" --> ");
-
-	for (ind = 0; ind < 5; ind += 1)
-		printf("%.2x:", eth->dst[ind]);
-	printf("%.2x ", eth->dst[5]);
-
-	printf("%d\n", eth->protocol);
+	print_mac_address(eth->dst);
+	printf(" %d\n", eth->protocol);
 }
 
 void print_arp(arp_hdr *arph)
 {
-	int ind;
-
 	printf("arp      | ");
-	for (ind = 0; ind < 5; ind += 1)
-		printf("%.2x:", arph->src_mac[ind]);
-	printf("%.2x", arph->src_mac[5]);
+	print_mac_address(arph->src_mac);
 	printf(" --> ");
-	for (ind = 0; ind < 5; ind += 1)
-		printf("%.2x:", arph->dst_mac[ind]);
-	printf("%.2x ", arph->dst_mac[5]);
-
-	printf("%u.%u.%u.%u", arph->src_ip[0], arph->src_ip[1], arph->src_ip[2],
-	       arph->src_ip[3]);
+	print_mac_address(arph->dst_mac);
+	printf(" ");
+	print_ip_address(arph->src_ip);
 	printf(" --> ");
-	printf("%u.%u.%u.%u", arph->dst_ip[0], arph->dst_ip[1], arph->dst_ip[2],
-	       arph->dst_ip[3]);
+	print_ip_address(arph->dst_ip);
 
 	if (arph->oper == htons(1))
 		printf(" request\n");
@@ -57,12 +53,10 @@ void print_arp(arp_hdr *arph)
 void print_ip(ip_hdr *iph)
 {
 	printf("ip       | ");
-	printf("%u.%u.%u.%u", iph->src[0], iph->src[1], iph->src[2],
-	       iph->src[3]);
+	print_ip_address(iph->src);
 	printf(" --> ");
-	printf("%u.%u.%u.%u ", iph->dst[0], iph->dst[1], iph->dst[2],
-	       iph->dst[3]);
-	printf("proto:%d ", iph->protocol);
+	print_ip_address(iph->dst);
+	printf(" proto:%d ", iph->protocol);
 	printf("tos:%d ", iph->service);
 	printf("ttl:%d ", iph->ttl);
 	printf("id:%d ", iph->ident);

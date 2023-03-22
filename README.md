@@ -60,7 +60,7 @@ Example Usages
 
 License
 ----------
-This library is free software; you can redistribute it and/or modify it under the terms of the GPLv3 license.
+This project is free software; you can redistribute it and/or modify it under the terms of the GPLv3 license.
 See [LICENSE][] for details.
 
 [GitHub]: https://github.com/fksvs/inject

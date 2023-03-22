@@ -100,7 +100,7 @@ void inject_icmp(int argc, char *argv[])
 {
 	char buffer[BUFF_SIZE];
 	struct sockaddr_in sock_dst;
-	int sockfd, ind;
+	int sockfd;
 
 	parser(argc, argv);
 
@@ -122,8 +122,7 @@ void inject_icmp(int argc, char *argv[])
 	build_icmp(buffer, icmp_type, icmp_code, 0);
 
 	ip_hdr *iph = (ip_hdr *)buffer;
-	for (ind = 0; ind < count; ind += 1)
-		send_data(sockfd, buffer, iph->length, &sock_dst);
+	send_raw(sockfd, buffer, iph->length, &sock_dst, count);
 
 	if (verbose) {
 		ip_hdr *iph = (ip_hdr *)buffer;

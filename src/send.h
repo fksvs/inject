@@ -7,8 +7,8 @@
 #include <net/ethernet.h>
 #include <netinet/in.h>
 
-int send_data(int sockfd, char *buffer, size_t len, struct sockaddr_in *dst);
-int send_packet_data(int sockfd, char *buffer, size_t len,
-		     struct sockaddr_ll *device);
-
+void send_raw(int sockfd, char *buffer, size_t len,
+	      struct sockaddr_in *dest_addr, int count);
+void send_packet(int sockfd, char *buffer, size_t len,
+		 struct sockaddr_ll *dest_addr, int count);
 #endif

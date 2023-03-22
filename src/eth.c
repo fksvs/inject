@@ -120,7 +120,7 @@ void inject_eth(int argc, char *argv[])
 {
 	char buffer[BUFF_SIZE], *payload;
 	struct sockaddr_ll device;
-	int sockfd, ind, len;
+	int sockfd, len;
 	size_t payload_size = 0;
 
 	parser(argc, argv);
@@ -137,7 +137,7 @@ void inject_eth(int argc, char *argv[])
 		err_msg("eth.c", "inject_eth", __LINE__, errno);
 	device.sll_family = AF_PACKET;
 	memcpy(device.sll_addr, src_mac, 6);
-	device.sll_halen = 6;
+	device.sll_halen = ETHER_ADDR_LEN;
 
 	if (file_name) {
 		if ((payload = read_file(file_name)) == NULL)
@@ -148,8 +148,7 @@ void inject_eth(int argc, char *argv[])
 	build_eth(buffer, dst_mac, src_mac, protocol, payload, payload_size);
 
 	len = sizeof(eth_hdr) + payload_size;
-	for (ind = 0; ind < count; ind += 1)
-		send_packet_data(sockfd, buffer, len, &device);
+	send_packet(sockfd, buffer, len, &device, count);
 
 	if (verbose) {
 		eth_hdr *eth = (eth_hdr *)buffer;

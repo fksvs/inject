@@ -16,15 +16,11 @@ int init_socket()
 {
 	int sockfd, enable = 1;
 
-	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		err_msg("sockf.c", "init_socket", __LINE__, errno);
-		return -1;
-	}
 	if (setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &enable, sizeof(int)) <
-	    0) {
+	    0)
 		err_msg("sockf.c", "init_socket", __LINE__, errno);
-		return -1;
-	}
 
 	return sockfd;
 }
@@ -33,10 +29,8 @@ int init_packet_socket()
 {
 	int sockfd;
 
-	if ((sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) {
+	if ((sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0)
 		err_msg("sockf.c", "init_raw_socket", __LINE__, errno);
-		return -1;
-	}
 
 	return sockfd;
 }

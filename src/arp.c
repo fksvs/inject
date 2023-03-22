@@ -135,7 +135,7 @@ void inject_arp(int argc, char *argv[])
 {
 	char buffer[BUFF_SIZE];
 	struct sockaddr_ll device;
-	int sockfd, ind, len;
+	int sockfd, len;
 
 	parser(argc, argv);
 
@@ -151,14 +151,14 @@ void inject_arp(int argc, char *argv[])
 		err_msg("arp.c", "inject_arp", __LINE__, errno);
 	device.sll_family = AF_PACKET;
 	memcpy(device.sll_addr, src_mac, 6);
-	device.sll_halen = 6;
+	device.sll_halen = ETHER_ADDR_LEN;
+	device.sll_protocol = htons(ETH_P_ARP);
 
 	build_eth(buffer, dst_mac, src_mac, ETH_P_ARP, NULL, 0);
 	build_arp(buffer, src_mac, src_ip, dst_mac, dst_ip, oper);
 
 	len = sizeof(eth_hdr) + sizeof(arp_hdr);
-	for (ind = 0; ind < count; ind += 1)
-		send_packet_data(sockfd, buffer, len, &device);
+	send_packet(sockfd, buffer, len, &device, count);
 
 	if (verbose) {
 		eth_hdr *eth = (eth_hdr *)buffer;
