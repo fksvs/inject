@@ -1,8 +1,10 @@
 #ifndef ETH
 #define ETH
 
-void build_eth(char *buffer, unsigned char *dst, unsigned char *src,
-	       unsigned short proto, char *payload, size_t payload_size);
+#include "type.h"
+
+void build_eth(eth_hdr *eth, unsigned char *dst_mac, unsigned char *src_mac,
+	       unsigned short protocol, char *payload, size_t payload_size);
 void inject_eth(int argc, char *argv[]);
 
 #endif

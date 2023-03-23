@@ -15,51 +15,86 @@
 #include <linux/if_packet.h>
 #include <net/if.h>
 
+#include "eth.h"
 #include "sockf.h"
-#include "get_addr.h"
+#include "type.h"
 #include "send.h"
 #include "data.h"
 #include "error_func.h"
 #include "output.h"
-#include "type.h"
-#include "eth.h"
 #include "usage.h"
 
-static unsigned char src_mac[6], dst_mac[6];
-static unsigned short protocol;
-static int count = 1, verbose = 0, src_mac_control = 0, dst_mac_control = 0;
-static char *file_name = NULL, *iface = NULL;
+static char buffer[BUFF_SIZE];
+static eth_hdr eth;
+static struct sockaddr_ll device;
+static int sockfd;
+static int payload_size = 0;
 
-void build_eth(char *buffer, unsigned char *dst, unsigned char *src,
-	       unsigned short proto, char *payload, size_t payload_size)
+static char *iface;
+static int count = 1;
+static int verbose = 0;
+
+void build_eth(eth_hdr *eth, unsigned char *dst_mac, unsigned char *src_mac,
+	       unsigned short protocol, char *payload, size_t payload_size)
 {
-	eth_hdr *ethh = (eth_hdr *)buffer;
-	char *ptr = (buffer + sizeof(eth_hdr));
-
-	strncat(ptr, payload, payload_size);
-	memcpy(ethh->dst, dst, 6);
-	memcpy(ethh->src, src, 6);
-	ethh->protocol = htons(proto);
+	strncat(buffer + sizeof(eth_hdr), payload, payload_size);
+	memcpy(eth->dst, dst_mac, ETHER_ADDR_LEN);
+	memcpy(eth->src, src_mac, ETHER_ADDR_LEN);
+	eth->protocol = htons(protocol);
 }
 
-static void validate_eth(int sockfd)
+static void fill_device()
 {
+	if ((device.sll_ifindex = if_nametoindex(iface)) == 0)
+		err_msg("eth.c", "fill_device", __LINE__, errno);
+
+	device.sll_family = AF_PACKET;
+	memcpy(device.sll_addr, &eth.src, ETHER_ADDR_LEN);
+	device.sll_halen = ETHER_ADDR_LEN;
+}
+
+static int fill_payload(char *file_name)
+{
+	char *payload;
+
+	if ((payload = read_file(file_name)) == NULL) {
+		err_msg("eth.c", "fill_payload", __LINE__, errno);
+		return -1;
+	}
+	payload_size = strlen(payload);
+	strncat(buffer + sizeof(eth_hdr), payload, payload_size);
+
+	return 0;
+}
+
+static void validate_eth_packet()
+{
+	char zero[BUFF_SIZE];
+	memset(zero, 0, BUFF_SIZE);
+
 	if (!iface)
 		err_exit("network interface not specified.");
 
-	if (!src_mac_control) {
+	if (!memcmp(&eth.src, zero, ETHER_ADDR_LEN)) {
 		struct ifreq ifr;
 		memset(&ifr, 0, sizeof(struct ifreq));
 
 		memcpy(ifr.ifr_name, iface, strlen(iface));
 		if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == -1)
-			err_msg("eth.c", "inject_eth", __LINE__, errno);
+			err_msg("eth.c", "validate_eth_packet", __LINE__,
+				errno);
 
-		memcpy(src_mac, ifr.ifr_hwaddr.sa_data, 6);
+		memcpy(&eth.src, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 	}
 
-	if (!dst_mac_control)
-		memset(dst_mac, 0xff, 6);
+	if (!memcmp(&eth.dst, zero, ETHER_ADDR_LEN))
+		memset(&eth.dst, 0xff, ETHER_ADDR_LEN);
+}
+
+static void get_mac_address(char *data, char *mac)
+{
+	sscanf(data, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx:", &mac[0], &mac[1],
+	       &mac[2], &mac[3], &mac[4], &mac[5]);
 }
 
 static void usage()
@@ -71,7 +106,7 @@ static void usage()
 	exit(EXIT_FAILURE);
 }
 
-static void parser(int argc, char *argv[])
+static void parse_eth(int argc, char *argv[])
 {
 	int opt;
 
@@ -91,24 +126,23 @@ static void parser(int argc, char *argv[])
 			break;
 		case 'h':
 			usage();
-			break;
 		case 'M':
-			sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-			       &src_mac[0], &src_mac[1], &src_mac[2],
-			       &src_mac[3], &src_mac[4], &src_mac[5]);
-			src_mac_control = 1;
+			char src_mac[6];
+			get_mac_address(optarg, src_mac);
+			memcpy(eth.src, src_mac, ETHER_ADDR_LEN);
 			break;
 		case 'K':
-			sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-			       &dst_mac[0], &dst_mac[1], &dst_mac[2],
-			       &dst_mac[3], &dst_mac[4], &dst_mac[5]);
-			dst_mac_control = 1;
+			char dst_mac[6];
+			get_mac_address(optarg, dst_mac);
+			memcpy(eth.dst, dst_mac, ETHER_ADDR_LEN);
 			break;
 		case 'p':
-			protocol = atoi(optarg);
+			unsigned short protocol = atoi(optarg);
+			eth.protocol = htons(protocol);
 			break;
 		case 'a':
-			file_name = optarg;
+			char *file_name = optarg;
+			fill_payload(file_name);
 			break;
 		case '?':
 			break;
@@ -118,42 +152,23 @@ static void parser(int argc, char *argv[])
 
 void inject_eth(int argc, char *argv[])
 {
-	char buffer[BUFF_SIZE], *payload;
-	struct sockaddr_ll device;
-	int sockfd, len;
-	size_t payload_size = 0;
-
-	parser(argc, argv);
-
 	memset(buffer, 0, BUFF_SIZE);
+	memset(&eth, 0, sizeof(eth_hdr));
 	memset(&device, 0, sizeof(struct sockaddr_ll));
 
 	if ((sockfd = init_packet_socket()) == -1)
 		exit(EXIT_FAILURE);
 
-	validate_eth(sockfd);
+	parse_eth(argc, argv);
+	validate_eth_packet();
+	fill_device();
+	memcpy(buffer, &eth, sizeof(eth_hdr));
 
-	if ((device.sll_ifindex = if_nametoindex(iface)) == 0)
-		err_msg("eth.c", "inject_eth", __LINE__, errno);
-	device.sll_family = AF_PACKET;
-	memcpy(device.sll_addr, src_mac, 6);
-	device.sll_halen = ETHER_ADDR_LEN;
-
-	if (file_name) {
-		if ((payload = read_file(file_name)) == NULL)
-			exit(EXIT_FAILURE);
-		payload_size = strlen(payload);
-	}
-
-	build_eth(buffer, dst_mac, src_mac, protocol, payload, payload_size);
-
-	len = sizeof(eth_hdr) + payload_size;
+	int len = sizeof(eth_hdr) + payload_size;
 	send_packet(sockfd, buffer, len, &device, count);
 
-	if (verbose) {
-		eth_hdr *eth = (eth_hdr *)buffer;
-		print_eth(eth);
-	}
+	if (verbose)
+		print_eth(&eth);
 
 	close_sock(sockfd);
 	exit(EXIT_SUCCESS);
