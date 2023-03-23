@@ -15,64 +15,94 @@
 #include <linux/if_packet.h>
 #include <net/if.h>
 
-#include "sockf.h"
-#include "get_addr.h"
-#include "send.h"
-#include "error_func.h"
-#include "output.h"
-#include "type.h"
 #include "eth.h"
 #include "arp.h"
+#include "sockf.h"
+#include "type.h"
+#include "send.h"
+#include "data.h"
+#include "get_addr.h"
+#include "error_func.h"
+#include "output.h"
 #include "usage.h"
 
-static unsigned char src_mac[6], dst_mac[6];
-static unsigned char *src_ip = NULL, *dst_ip = NULL;
-static unsigned short oper;
-static int count = 1, verbose = 0, src_mac_control = 0, dst_mac_control = 0;
-static char *iface = NULL;
+static char buffer[BUFF_SIZE];
+static eth_hdr eth;
+static arp_hdr arp;
+static struct sockaddr_ll device;
+static int sockfd;
 
-void build_arp(char *buffer, unsigned char *source_mac,
+static char *iface;
+static int count = 1;
+static int verbose = 0;
+
+void build_arp(arp_hdr *arp, unsigned char *source_mac,
 	       unsigned char *source_ip, unsigned char *target_mac,
 	       unsigned char *target_ip, unsigned short oper)
 {
-	arp_hdr *arph = (arp_hdr *)(buffer + sizeof(eth_hdr));
+	arp->htype = htons(1);
+	arp->ptype = htons(ETH_P_IP);
+	arp->hlen = ETHER_ADDR_LEN;
+	arp->plen = 4;
+	arp->oper = htons(oper);
 
-	arph->htype = htons(1);
-	arph->ptype = htons(ETH_P_IP);
-	arph->hlen = 6;
-	arph->plen = 4;
-	arph->oper = htons(oper);
-	memcpy(arph->src_mac, source_mac, 6);
+	memcpy(arp->src_mac, source_mac, ETHER_ADDR_LEN);
 	if (!source_ip) {
 		struct in_addr addr = { get_address() };
-		inet_pton(AF_INET, (const char *)inet_ntoa(addr),
-			  &arph->src_ip);
+		inet_pton(AF_INET, (const char *)inet_ntoa(addr), &arp->src_ip);
 	} else
-		inet_pton(AF_INET, (const char *)source_ip, &arph->src_ip);
-	memcpy(arph->dst_mac, target_mac, 6);
-	inet_pton(AF_INET, (const char *)target_ip, &arph->dst_ip);
+		inet_pton(AF_INET, (const char *)source_ip, &arp->src_ip);
+
+	memcpy(arp->dst_mac, target_mac, ETHER_ADDR_LEN);
+	inet_pton(AF_INET, (const char *)target_ip, &arp->dst_ip);
 }
 
-static void validate_arp(int sockfd)
+static void fill_device()
 {
+	if ((device.sll_ifindex = if_nametoindex(iface)) == 0)
+		err_msg("arp.c", "fill_device", __LINE__, errno);
+
+	device.sll_family = AF_PACKET;
+	memcpy(device.sll_addr, &eth.src, ETHER_ADDR_LEN);
+	device.sll_halen = ETHER_ADDR_LEN;
+}
+
+static void validate_arp_packet()
+{
+	char zero[BUFF_SIZE];
+	memset(zero, 0, BUFF_SIZE);
+
 	if (!iface)
 		err_exit("network interface not specified.");
-	if (!dst_ip)
+
+	if (!memcmp(&arp.src_ip, zero, 4)) {
+		struct in_addr addr = { get_address() };
+		inet_pton(AF_INET, (const char *)inet_ntoa(addr), arp.src_ip);
+	}
+
+	if (!memcmp(&arp.dst_ip, zero, 4))
 		err_exit("destination ip address not specified.");
 
-	if (!src_mac_control) {
+	if (!memcmp(&arp.src_mac, zero, ETHER_ADDR_LEN)) {
 		struct ifreq ifr;
 		memset(&ifr, 0, sizeof(struct ifreq));
 
 		memcpy(ifr.ifr_name, iface, strlen(iface));
 		if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == -1)
-			err_msg("arp.c", "inject_arp", __LINE__, errno);
+			err_msg("arp.c", "validate_arp_packet", __LINE__,
+				errno);
 
-		memcpy(src_mac, ifr.ifr_hwaddr.sa_data, 6);
+		memcpy(&arp.src_mac, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 	}
 
-	if (!dst_mac_control)
-		memset(dst_mac, 0xff, 6);
+	if (!memcmp(&arp.dst_mac, zero, ETHER_ADDR_LEN))
+		memset(&arp.dst_mac, 0xff, ETHER_ADDR_LEN);
+}
+
+static void get_mac_address(char *data, char *mac)
+{
+	sscanf(data, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx:", &mac[0], &mac[1],
+	       &mac[2], &mac[3], &mac[4], &mac[5]);
 }
 
 static void usage()
@@ -84,12 +114,17 @@ static void usage()
 	exit(EXIT_FAILURE);
 }
 
-static void parser(int argc, char *argv[])
+static void parse_arp(int argc, char *argv[])
 {
 	int opt;
 
 	if (argc < 3)
 		usage();
+
+	arp.htype = htons(1);
+	arp.ptype = htons(ETH_P_IP);
+	arp.hlen = ETHER_ADDR_LEN;
+	arp.plen = 4;
 
 	while ((opt = getopt(argc, argv, "i:c:vhM:K:S:D:r:")) != -1) {
 		switch (opt) {
@@ -105,26 +140,26 @@ static void parser(int argc, char *argv[])
 		case 'h':
 			usage();
 		case 'M':
-			sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-			       &src_mac[0], &src_mac[1], &src_mac[2],
-			       &src_mac[3], &src_mac[4], &src_mac[5]);
-			src_mac_control = 1;
+			char src_mac[6];
+			get_mac_address(optarg, src_mac);
+			memcpy(arp.src_mac, src_mac, ETHER_ADDR_LEN);
 			break;
 		case 'K':
-			sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-			       &dst_mac[0], &dst_mac[1], &dst_mac[2],
-			       &dst_mac[3], &dst_mac[4], &dst_mac[5]);
-			dst_mac_control = 1;
+			char dst_mac[6];
+			get_mac_address(optarg, dst_mac);
+			memcpy(arp.dst_mac, dst_mac, ETHER_ADDR_LEN);
 			break;
 		case 'S':
-			src_ip = (unsigned char *)optarg;
+			unsigned char *src_ip = (unsigned char *)optarg;
+			inet_pton(AF_INET, (const char *)src_ip, arp.src_ip);
 			break;
 		case 'D':
-			dst_ip = (unsigned char *)optarg;
+			unsigned char *dst_ip = (unsigned char *)optarg;
+			inet_pton(AF_INET, (const char *)dst_ip, arp.dst_ip);
 			break;
 		case 'r':
-			oper = atoi(optarg);
-			break;
+			unsigned short oper = atoi(optarg);
+			arp.oper = htons(oper);
 		case '?':
 			break;
 		}
@@ -133,38 +168,28 @@ static void parser(int argc, char *argv[])
 
 void inject_arp(int argc, char *argv[])
 {
-	char buffer[BUFF_SIZE];
-	struct sockaddr_ll device;
-	int sockfd, len;
-
-	parser(argc, argv);
-
 	memset(buffer, 0, BUFF_SIZE);
+	memset(&eth, 0, sizeof(eth_hdr));
+	memset(&arp, 0, sizeof(arp_hdr));
 	memset(&device, 0, sizeof(struct sockaddr_ll));
 
 	if ((sockfd = init_packet_socket()) == -1)
 		exit(EXIT_FAILURE);
 
-	validate_arp(sockfd);
+	parse_arp(argc, argv);
+	validate_arp_packet();
+	build_eth(&eth, arp.dst_mac, arp.src_mac, ETH_P_ARP, NULL, 0);
+	fill_device();
 
-	if ((device.sll_ifindex = if_nametoindex(iface)) == 0)
-		err_msg("arp.c", "inject_arp", __LINE__, errno);
-	device.sll_family = AF_PACKET;
-	memcpy(device.sll_addr, src_mac, 6);
-	device.sll_halen = ETHER_ADDR_LEN;
-	device.sll_protocol = htons(ETH_P_ARP);
+	memcpy(buffer, &eth, sizeof(eth_hdr));
+	memcpy(buffer + sizeof(eth_hdr), &arp, sizeof(arp_hdr));
 
-	build_eth(buffer, dst_mac, src_mac, ETH_P_ARP, NULL, 0);
-	build_arp(buffer, src_mac, src_ip, dst_mac, dst_ip, oper);
-
-	len = sizeof(eth_hdr) + sizeof(arp_hdr);
+	int len = sizeof(eth_hdr) + sizeof(arp_hdr);
 	send_packet(sockfd, buffer, len, &device, count);
 
 	if (verbose) {
-		eth_hdr *eth = (eth_hdr *)buffer;
-		arp_hdr *arph = (arp_hdr *)(buffer + sizeof(eth_hdr));
-		print_eth(eth);
-		print_arp(arph);
+		print_eth(&eth);
+		print_arp(&arp);
 	}
 
 	close_sock(sockfd);
