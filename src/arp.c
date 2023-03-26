@@ -178,7 +178,7 @@ void inject_arp(int argc, char *argv[])
 
 	parse_arp(argc, argv);
 	validate_arp_packet();
-	build_eth(&eth, arp.dst_mac, arp.src_mac, ETH_P_ARP, NULL, 0);
+	build_eth(&eth, arp.dst_mac, arp.src_mac, ETH_P_ARP);
 	fill_device();
 
 	memcpy(buffer, &eth, sizeof(eth_hdr));

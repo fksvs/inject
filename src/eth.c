@@ -35,9 +35,8 @@ static int count = 1;
 static int verbose = 0;
 
 void build_eth(eth_hdr *eth, unsigned char *dst_mac, unsigned char *src_mac,
-	       unsigned short protocol, char *payload, size_t payload_size)
+	       unsigned short protocol)
 {
-	strncat(buffer + sizeof(eth_hdr), payload, payload_size);
 	memcpy(eth->dst, dst_mac, ETHER_ADDR_LEN);
 	memcpy(eth->src, src_mac, ETHER_ADDR_LEN);
 	eth->protocol = htons(protocol);
