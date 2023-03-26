@@ -3,16 +3,15 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "error_func.h"
 #include "eth.h"
 #include "arp.h"
 #include "ip.h"
 #include "icmp.h"
 #include "tcp.h"
 #include "udp.h"
-#include "get_addr.h"
-#include "listen.h"
+#include "sniff.h"
 #include "usage.h"
+#include "helpers.h"
 
 void parser(int argc, char *argv[])
 {

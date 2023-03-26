@@ -8,15 +8,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "sockf.h"
-#include "send.h"
-#include "error_func.h"
+#include "network.h"
 #include "output.h"
 #include "type.h"
 #include "ip.h"
 #include "icmp.h"
-#include "checksum.h"
 #include "usage.h"
+#include "helpers.h"
 
 static unsigned char *src_addr = NULL, *dst_addr = NULL;
 static unsigned char ttl, service = 0, icmp_type, icmp_code;

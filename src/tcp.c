@@ -9,17 +9,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "sockf.h"
-#include "send.h"
-#include "data.h"
-#include "error_func.h"
+#include "network.h"
+#include "fileio.h"
 #include "output.h"
 #include "type.h"
 #include "ip.h"
 #include "tcp.h"
-#include "random.h"
-#include "checksum.h"
 #include "usage.h"
+#include "helpers.h"
 
 static unsigned char *src_addr = NULL, *dst_addr = NULL;
 static unsigned char ttl, service = 0, tcp_flag;

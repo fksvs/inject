@@ -16,13 +16,12 @@
 #include <net/if.h>
 
 #include "eth.h"
-#include "sockf.h"
+#include "network.h"
 #include "type.h"
-#include "send.h"
-#include "data.h"
-#include "error_func.h"
+#include "fileio.h"
 #include "output.h"
 #include "usage.h"
+#include "helpers.h"
 
 static char buffer[BUFF_SIZE];
 static eth_hdr eth;

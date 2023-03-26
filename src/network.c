@@ -8,9 +8,10 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <linux/if_ether.h>
+#include <net/ethernet.h>
 
-#include "sockf.h"
-#include "error_func.h"
+#include "network.h"
+#include "helpers.h"
 
 int init_socket()
 {
@@ -51,4 +52,30 @@ void close_sock(int sockfd)
 {
 	if (close(sockfd) == -1)
 		err_msg("sockf.c", "close_sock", __LINE__, errno);
+}
+
+void send_raw(int sockfd, char *buffer, size_t len,
+              struct sockaddr_in *dest_addr, int count)
+{
+        socklen_t addrlen = sizeof(*dest_addr);
+        int ind;
+
+        for (ind = 0; ind < count; ind += 1) {
+                if (sendto(sockfd, buffer, len, 0, (struct sockaddr *)dest_addr,
+                           addrlen) < 0)
+                        err_msg("send.c", "send_packet", __LINE__, errno);
+        }
+}
+
+void send_packet(int sockfd, char *buffer, size_t len,
+                 struct sockaddr_ll *dest_addr, int count)
+{
+        socklen_t addrlen = sizeof(*dest_addr);
+        int ind;
+
+        for (ind = 0; ind < count; ind += 1) {
+                if (sendto(sockfd, buffer, len, 0, (struct sockaddr *)dest_addr,
+                           addrlen) < 0)
+                        err_msg("send.c", "send_packet", __LINE__, errno);
+        }
 }

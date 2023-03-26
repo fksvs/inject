@@ -6,8 +6,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "error_func.h"
-#include "data.h"
+#include "fileio.h"
+#include "helpers.h"
 
 char *read_file(char *file_name)
 {

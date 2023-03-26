@@ -10,12 +10,12 @@
 #include <net/ethernet.h>
 #include <linux/if_ether.h>
 
-#include "sockf.h"
+#include "network.h"
 #include "type.h"
-#include "listen.h"
+#include "sniff.h"
 #include "output.h"
-#include "error_func.h"
 #include "usage.h"
+#include "helpers.h"
 
 static int flag = 0;
 

@@ -17,12 +17,9 @@
 
 #include "eth.h"
 #include "arp.h"
-#include "sockf.h"
+#include "network.h"
 #include "type.h"
-#include "send.h"
-#include "data.h"
-#include "get_addr.h"
-#include "error_func.h"
+#include "helpers.h"
 #include "output.h"
 #include "usage.h"
 
