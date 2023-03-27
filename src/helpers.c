@@ -11,6 +11,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <ifaddrs.h>
+#include <net/ethernet.h>
+#include <linux/if_packet.h>
+#include <net/if.h>
 
 #include "helpers.h"
 
@@ -45,6 +48,16 @@ void err_exit(char *msg)
 {
         fprintf(stderr, "[ERROR] %s\n", msg);
         exit(EXIT_FAILURE);
+}
+
+void fill_device(struct sockaddr_ll *device, char *iface, unsigned char *mac)
+{
+        if ((device->sll_ifindex = if_nametoindex(iface)) == 0)
+                err_msg("eth.c", "fill_device", __LINE__, errno);
+
+        device->sll_family = AF_PACKET;
+        memcpy(device->sll_addr, mac, ETHER_ADDR_LEN);
+        device->sll_halen = ETHER_ADDR_LEN;
 }
 
 unsigned int get_address()
@@ -102,6 +115,12 @@ int list_interfaces()
         freeifaddrs(addr);
 
         return 0;
+}
+
+void read_mac_address(char *data, char *mac)
+{
+        sscanf(data, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx:", &mac[0], &mac[1],
+               &mac[2], &mac[3], &mac[4], &mac[5]);
 }
 
 unsigned int rand_addr()

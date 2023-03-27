@@ -25,20 +25,20 @@ void build_ip(char *buffer, size_t payload_size, unsigned char *src,
 	      unsigned char protocol)
 {
 	ip_hdr *iph = (ip_hdr *)buffer;
+	int protocol_size = 0;
 
-	iph->length = sizeof(ip_hdr);
 	switch (protocol) {
 	case IPPROTO_ICMP:
-		iph->length += sizeof(icmp_hdr);
+		protocol_size = sizeof(icmp_hdr);
 		break;
 	case IPPROTO_TCP:
-		iph->length += sizeof(tcp_hdr);
+		protocol_size = sizeof(tcp_hdr);
 		break;
 	case IPPROTO_UDP:
-		iph->length += sizeof(udp_hdr);
+		protocol_size = sizeof(udp_hdr);
 		break;
 	}
-	iph->length += payload_size;
+	iph->length = sizeof(ip_hdr) + protocol_size + payload_size;
 
 	iph->ver_ihl = 0x45;
 	iph->service = service;

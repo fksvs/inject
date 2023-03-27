@@ -54,16 +54,6 @@ void build_arp(arp_hdr *arp, unsigned char *source_mac,
 	inet_pton(AF_INET, (const char *)target_ip, &arp->dst_ip);
 }
 
-static void fill_device()
-{
-	if ((device.sll_ifindex = if_nametoindex(iface)) == 0)
-		err_msg("arp.c", "fill_device", __LINE__, errno);
-
-	device.sll_family = AF_PACKET;
-	memcpy(device.sll_addr, &eth.src, ETHER_ADDR_LEN);
-	device.sll_halen = ETHER_ADDR_LEN;
-}
-
 static void validate_arp_packet()
 {
 	char zero[BUFF_SIZE];
@@ -94,12 +84,6 @@ static void validate_arp_packet()
 
 	if (!memcmp(&arp.dst_mac, zero, ETHER_ADDR_LEN))
 		memset(&arp.dst_mac, 0xff, ETHER_ADDR_LEN);
-}
-
-static void get_mac_address(char *data, char *mac)
-{
-	sscanf(data, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx:", &mac[0], &mac[1],
-	       &mac[2], &mac[3], &mac[4], &mac[5]);
 }
 
 static void usage()
@@ -138,12 +122,12 @@ static void parse_arp(int argc, char *argv[])
 			usage();
 		case 'M':
 			char src_mac[6];
-			get_mac_address(optarg, src_mac);
+			read_mac_address(optarg, src_mac);
 			memcpy(arp.src_mac, src_mac, ETHER_ADDR_LEN);
 			break;
 		case 'K':
 			char dst_mac[6];
-			get_mac_address(optarg, dst_mac);
+			read_mac_address(optarg, dst_mac);
 			memcpy(arp.dst_mac, dst_mac, ETHER_ADDR_LEN);
 			break;
 		case 'S':
@@ -176,7 +160,7 @@ void inject_arp(int argc, char *argv[])
 	parse_arp(argc, argv);
 	validate_arp_packet();
 	build_eth(&eth, arp.dst_mac, arp.src_mac, ETH_P_ARP);
-	fill_device();
+	fill_device(&device, iface, arp.src_mac);
 
 	memcpy(buffer, &eth, sizeof(eth_hdr));
 	memcpy(buffer + sizeof(eth_hdr), &arp, sizeof(arp_hdr));

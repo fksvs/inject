@@ -41,16 +41,6 @@ void build_eth(eth_hdr *eth, unsigned char *dst_mac, unsigned char *src_mac,
 	eth->protocol = htons(protocol);
 }
 
-static void fill_device()
-{
-	if ((device.sll_ifindex = if_nametoindex(iface)) == 0)
-		err_msg("eth.c", "fill_device", __LINE__, errno);
-
-	device.sll_family = AF_PACKET;
-	memcpy(device.sll_addr, &eth.src, ETHER_ADDR_LEN);
-	device.sll_halen = ETHER_ADDR_LEN;
-}
-
 static int fill_payload(char *file_name)
 {
 	char *payload;
@@ -62,6 +52,7 @@ static int fill_payload(char *file_name)
 	payload_size = strlen(payload);
 	strncat(buffer + sizeof(eth_hdr), payload, payload_size);
 
+	free(payload);
 	return 0;
 }
 
@@ -87,12 +78,6 @@ static void validate_eth_packet()
 
 	if (!memcmp(&eth.dst, zero, ETHER_ADDR_LEN))
 		memset(&eth.dst, 0xff, ETHER_ADDR_LEN);
-}
-
-static void get_mac_address(char *data, char *mac)
-{
-	sscanf(data, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx:", &mac[0], &mac[1],
-	       &mac[2], &mac[3], &mac[4], &mac[5]);
 }
 
 static void usage()
@@ -126,12 +111,12 @@ static void parse_eth(int argc, char *argv[])
 			usage();
 		case 'M':
 			char src_mac[6];
-			get_mac_address(optarg, src_mac);
+			read_mac_address(optarg, src_mac);
 			memcpy(eth.src, src_mac, ETHER_ADDR_LEN);
 			break;
 		case 'K':
 			char dst_mac[6];
-			get_mac_address(optarg, dst_mac);
+			read_mac_address(optarg, dst_mac);
 			memcpy(eth.dst, dst_mac, ETHER_ADDR_LEN);
 			break;
 		case 'p':
@@ -159,7 +144,7 @@ void inject_eth(int argc, char *argv[])
 
 	parse_eth(argc, argv);
 	validate_eth_packet();
-	fill_device();
+	fill_device(&device, iface, eth.src);
 	memcpy(buffer, &eth, sizeof(eth_hdr));
 
 	int len = sizeof(eth_hdr) + payload_size;
