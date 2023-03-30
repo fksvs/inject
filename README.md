@@ -1,6 +1,7 @@
 I N J E C T
-===========
-inject is a command line packet crafter, injector and sniffer for testing network services.
+======
+
+Inject is a command-line packet crafting, injection and sniffing tool that uses RAW sockets. It supports various protocols with multiple options. It is useful for network debugging and testing network services.
 
 Supported Protocols and Key Features
 ---------------------------------------------------
@@ -14,54 +15,137 @@ Supported Protocols and Key Features
 * Listing network interfaces
 
 Installation
---------------
-- Clone the source code from [GitHub][] or [GitLab][] :
+------------
+- Clone the repository from [GitHub][] or [GitLab][]: 
 
-        git clone https://github.com/fksvs/inject
-        git clone https://gitlab.com/fksvs/inject
+	    git clone https://github.com/fksvs/inject
+	    git clone https://gitlab.com/fksvs/inject
 
-- Move to the project directory :
+- Change directory to inject:
 
-        cd inejct/
+        cd inject
 
-- Compile the source code :
+- Build the project:
 
         make
 
-Example Usages
------------------------
-* ETHERNET packet
+Usage Examples
+--------------
 
-        ./inject eth -i wlp5s0 -M AA:BB:CC:DD:EE:FF -K FF:EE:DD:CC:BB:AA
+### Ethernet
 
-* ARP request
+Inject can craft Ethernet packets with the following options:
 
-        ./inject arp -i wlp5s0 -S 192.168.1.50 -D 192.168.1.1 -r 1
+- Source MAC address (-K)
+- Destination MAC address (-M)
+- Ethernet type (-p)
+- Payload file (-a)
 
-* IP packet with TTL of 20
+Ethernet packet with the payload "payload_file.txt" to the MAC address 00:11:22:33:44:55 using wlp5s0 network interface:
 
-        ./inject ip -S 192.168.1.50 -D 192.168.1.1 -T 20
+        inject eth -i wlp5s0 -K 00:11:22:33:44:5 -a payload_file.txt
 
-* ICMP ping
+---
 
-        ./inject icmp -S 192.168.1.50 -D 192.168.1.1 -t 8
+### ARP
 
-* TCP packet with SYN-ACK flag
+Inject can craft ARP packets with the following options:
 
-        ./inject tcp -S 192.168.1.50 -D 192.168.1.1 -s 5000 -d 80 -f syn -f ack
+- Source MAC address (-K)
+- Source IP address (-S)
+- Destination MAC address (-M)
+- Destination IP address (-D)
+- ARP operation (request or reply) (-r)
 
-* TCP packet with PSH flag and payload
+ARP request from the MAC address 00:11:22:33:44:55 asking who has the IP address 192.168.0.1:
 
-        ./inject tcp -S 192.168.1.50 -D 192.168.1.1 -s 5000 -d 4000 -f psh -a payload_file.txt
+        inject arp -i wlp5s0 -K 00:11:22:33:44:55 -S 192.168.1.50 -D 192.168.0.1 -r 1
 
-* UDP packet with payload
+---
 
-        ./inject udp -S 192.168.1.50 -D 192.168.1.1 -s 5000 -d 80 -a payload_file.txt
+### IP
+
+Inject can craft IP packets with the following options:
+
+- Source IP address (-S)
+- Destination IP address (-D)
+- TTL (-T)
+- Type of service (-0)
+
+IP packet from the IP address 192.168.1.40 to the IP address 192.168.1.1 with TTL of 48:
+
+        inject ip -S 192.168.1.40 -D 192.168.1.1 -T 48
+
+---
+
+### TCP
+
+Inject can craft TCP packets with the following options:
+
+- Source IP address (-S)
+- Source port (-s)
+- Destination IP address (-D)
+- Destination port (-d)
+- Flags (SYN, ACK, PSH, etc.) (-f)
+- Payload file (-a)
+
+TCP packet with the payload file "payload_file.txt" from the IP address 192.168.1.50 to the IP address 192.168.1.1 with the source port 4444, the destination port 80, and the SYN flag:
+
+        inject tcp -S 192.168.1.50 -s 4444 -D 192.168.1.1 -d 80 -f syn -a payload_file.txt
+
+---
+
+### UDP
+
+Inject can craft UDP packets with the following options:
+
+- Source IP address (-S)
+- Source port (-s)
+- Destination IP address (-D)
+- Destination port (-d)
+- Payload file (-a)
+
+UDP packet with the payload file "payload_file.txt" from the IP address 192.168.0.2 to the IP address 8.8.8.8 with the source port 4444 and the destination port 53:
+
+        inject udp -S 192.168.0.2 -s 4444 -D 8.8.8.8 -d 53 -a payload_file.txt
+
+---
+
+### ICMP
+
+Inject can craft ICMP packets with the following options:
+
+- Source IP address (-S)
+- Destination IP address (-D)
+- Type (-t)
+- Code (-C)
+
+ICMP packet with the IP address 192.168.0.2 to the IP address 8.8.8.8 with the ICMP type 8 (echo request) and code 0:
+
+        inject icmp -S 192.168.0.2 -D 8.8.8.8 -t 8 -C 0
+
+---
+
+### Sniff
+
+Inject can sniff following protocols:
+
+- Ethernet (-e)
+- ARP (-a)
+- IP (-i)
+- ICMP (-c)
+- TCP (-t)
+- UDP (-u)
+
+Sniffing only TCP and UDP packets:
+
+        inject sniff -t -u
+
+---
 
 License
 ----------
-This project is free software; you can redistribute it and/or modify it under the terms of the GPLv3 license.
-See [LICENSE][] for details.
+This project is free software; you can redistribute it and/or modify it under the terms of the GPLv3 license. See [LICENSE][] for details.
 
 [GitHub]: https://github.com/fksvs/inject
 [GitLab]: https://gitlab.com/fksvs/inject
