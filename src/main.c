@@ -36,10 +36,6 @@ void parser(int argc, char *argv[])
 		inject_tcp(argc, argv);
 	else if (!strcmp(argv[1], "udp"))
 		inject_udp(argc, argv);
-	else {
-		printf("protocol/mode not found.\n");
-		exit(EXIT_FAILURE);
-	}
 
 	while ((opt = getopt(argc, argv, "gh")) != -1) {
 		switch (opt) {
