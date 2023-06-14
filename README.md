@@ -18,16 +18,22 @@ Installation
 ------------
 - Clone the repository from [GitHub][] or [GitLab][]: 
 
-	    git clone https://github.com/fksvs/inject
-	    git clone https://gitlab.com/fksvs/inject
+```console
+git clone https://github.com/fksvs/inject
+git clone https://gitlab.com/fksvs/inject
+```
 
 - Change directory to inject:
 
-        cd inject
+```console
+cd inject
+```
 
 - Build the project:
 
-        make
+```console
+make
+```
 
 Usage Examples
 --------------
@@ -36,14 +42,16 @@ Usage Examples
 
 Inject can craft Ethernet packets with the following options:
 
-- Source MAC address (-K)
-- Destination MAC address (-M)
-- Ethernet type (-p)
-- Payload file (-a)
+- Source MAC address (`-K`)
+- Destination MAC address (`-M`)
+- Ethernet type (`-p`)
+- Payload file (`-a`)
 
-Ethernet packet with the payload "payload_file.txt" to the MAC address 00:11:22:33:44:55 using wlp5s0 network interface:
+Ethernet packet with the payload `payload_file.txt` to the MAC address `00:11:22:33:44:55` using `wlp5s0` network interface:
 
-        inject eth -i wlp5s0 -K 00:11:22:33:44:5 -a payload_file.txt
+```console
+inject eth -i wlp5s0 -K 00:11:22:33:44:5 -a payload_file.txt
+```
 
 ---
 
@@ -51,15 +59,17 @@ Ethernet packet with the payload "payload_file.txt" to the MAC address 00:11:22:
 
 Inject can craft ARP packets with the following options:
 
-- Source MAC address (-K)
-- Source IP address (-S)
-- Destination MAC address (-M)
-- Destination IP address (-D)
-- ARP operation (request or reply) (-r)
+- Source MAC address (`-K`)
+- Source IP address (`-S`)
+- Destination MAC address (`-M`)
+- Destination IP address (`-D`)
+- ARP operation (request or reply) (`-r`)
 
-ARP request from the MAC address 00:11:22:33:44:55 asking who has the IP address 192.168.0.1:
+ARP request from the MAC address `00:11:22:33:44:55` asking who has the IP address `192.168.0.1`:
 
-        inject arp -i wlp5s0 -K 00:11:22:33:44:55 -S 192.168.1.50 -D 192.168.0.1 -r 1
+```console
+inject arp -i wlp5s0 -K 00:11:22:33:44:55 -S 192.168.1.50 -D 192.168.0.1 -r 1
+```
 
 ---
 
@@ -67,14 +77,16 @@ ARP request from the MAC address 00:11:22:33:44:55 asking who has the IP address
 
 Inject can craft IP packets with the following options:
 
-- Source IP address (-S)
-- Destination IP address (-D)
-- TTL (-T)
-- Type of service (-0)
+- Source IP address (`-S`)
+- Destination IP address (`-D`)
+- TTL (`-T`)
+- Type of service (`-0`)
 
-IP packet from the IP address 192.168.1.40 to the IP address 192.168.1.1 with TTL of 48:
+IP packet from the IP address `192.168.1.40` to the IP address `192.168.1.1` with TTL of `48`:
 
-        inject ip -S 192.168.1.40 -D 192.168.1.1 -T 48
+```console
+inject ip -S 192.168.1.40 -D 192.168.1.1 -T 48
+```
 
 ---
 
@@ -82,16 +94,18 @@ IP packet from the IP address 192.168.1.40 to the IP address 192.168.1.1 with TT
 
 Inject can craft TCP packets with the following options:
 
-- Source IP address (-S)
-- Source port (-s)
-- Destination IP address (-D)
-- Destination port (-d)
-- Flags (SYN, ACK, PSH, etc.) (-f)
-- Payload file (-a)
+- Source IP address (`-S`)
+- Source port (`-s`)
+- Destination IP address (`-D`)
+- Destination port (`-d`)
+- Flags (SYN, ACK, PSH, etc.) (`-f`)
+- Payload file (`-a`)
 
-TCP packet with the payload file "payload_file.txt" from the IP address 192.168.1.50 to the IP address 192.168.1.1 with the source port 4444, the destination port 80, and the SYN flag:
+TCP packet with the payload file `payload_file.txt` from the IP address `192.168.1.50` to the IP address `192.168.1.1` with the source port `4444`, the destination port `80`, and the `SYN` flag:
 
-        inject tcp -S 192.168.1.50 -s 4444 -D 192.168.1.1 -d 80 -f syn -a payload_file.txt
+```console
+inject tcp -S 192.168.1.50 -s 4444 -D 192.168.1.1 -d 80 -f syn -a payload_file.txt
+```
 
 ---
 
@@ -99,15 +113,17 @@ TCP packet with the payload file "payload_file.txt" from the IP address 192.168.
 
 Inject can craft UDP packets with the following options:
 
-- Source IP address (-S)
-- Source port (-s)
-- Destination IP address (-D)
-- Destination port (-d)
-- Payload file (-a)
+- Source IP address (`-S`)
+- Source port (`-s`)
+- Destination IP address (`-D`)
+- Destination port (`-d`)
+- Payload file (`-a`)
 
-UDP packet with the payload file "payload_file.txt" from the IP address 192.168.0.2 to the IP address 8.8.8.8 with the source port 4444 and the destination port 53:
+UDP packet with the payload file `payload_file.txt` from the IP address `192.168.0.2` to the IP address `8.8.8.8` with the source port `4444` and the destination port `53`:
 
-        inject udp -S 192.168.0.2 -s 4444 -D 8.8.8.8 -d 53 -a payload_file.txt
+```console
+inject udp -S 192.168.0.2 -s 4444 -D 8.8.8.8 -d 53 -a payload_file.txt
+```
 
 ---
 
@@ -115,14 +131,16 @@ UDP packet with the payload file "payload_file.txt" from the IP address 192.168.
 
 Inject can craft ICMP packets with the following options:
 
-- Source IP address (-S)
-- Destination IP address (-D)
-- Type (-t)
-- Code (-C)
+- Source IP address (`-S`)
+- Destination IP address (`-D`)
+- Type (`-t`)
+- Code (`-C`)
 
-ICMP packet with the IP address 192.168.0.2 to the IP address 8.8.8.8 with the ICMP type 8 (echo request) and code 0:
+ICMP packet with the IP address `192.168.0.2` to the IP address `8.8.8.8` with the ICMP type `8` (echo request) and code `0`:
 
-        inject icmp -S 192.168.0.2 -D 8.8.8.8 -t 8 -C 0
+```console
+inject icmp -S 192.168.0.2 -D 8.8.8.8 -t 8 -C 0
+```
 
 ---
 
@@ -130,16 +148,18 @@ ICMP packet with the IP address 192.168.0.2 to the IP address 8.8.8.8 with the I
 
 Inject can sniff following protocols:
 
-- Ethernet (-e)
-- ARP (-a)
-- IP (-i)
-- ICMP (-c)
-- TCP (-t)
-- UDP (-u)
+- Ethernet (`-e`)
+- ARP (`-a`)
+- IP (`-i`)
+- ICMP (`-c`)
+- TCP (`-t`)
+- UDP (`-u`)
 
 Sniffing only TCP and UDP packets:
 
-        inject sniff -t -u
+```console
+inject sniff -t -u
+```
 
 ---
 
