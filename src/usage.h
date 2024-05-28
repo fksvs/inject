@@ -1,5 +1,5 @@
-#ifndef USAGE
-#define USAGE
+#ifndef USAGE_H
+#define USAGE_H
 
 void main_usage();
 void general_usage();

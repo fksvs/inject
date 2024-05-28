@@ -3,13 +3,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <net/ethernet.h>
 #include <linux/if_ether.h>
-
 #include "network.h"
 #include "type.h"
 #include "sniff.h"
@@ -24,8 +22,9 @@ static void output_packet(char *buffer, int fl)
 	eth_hdr *eth = (eth_hdr *)buffer;
 	unsigned short protocol = eth->protocol;
 
-	if ((fl & ETH_FLAG) == ETH_FLAG)
+	if ((fl & ETH_FLAG) == ETH_FLAG) {
 		print_eth(eth);
+	}
 
 	if ((protocol == htons(ETH_P_ARP)) && ((fl & ARP_FLAG) == ARP_FLAG)) {
 		arp_hdr *arph = (arp_hdr *)(buffer + sizeof(eth_hdr));
@@ -35,8 +34,9 @@ static void output_packet(char *buffer, int fl)
 	if (protocol == htons(ETH_P_IP)) {
 		ip_hdr *iph = (ip_hdr *)(buffer + sizeof(eth_hdr));
 
-		if ((fl & IP_FLAG) == IP_FLAG)
+		if ((fl & IP_FLAG) == IP_FLAG) {
 			print_ip(iph);
+		}
 
 		switch (iph->protocol) {
 		case 1:
@@ -69,10 +69,9 @@ static void output_packet(char *buffer, int fl)
 
 static void usage()
 {
-	printf("\n general options :\n\n\
-\t-h : this help message\n");
+	fprintf(stderr, "\n general options :\n\n\t-h : this help message\n");
 	sniff_usage();
-	printf("\n");
+	fprintf(stderr, "\n");
 
 	exit(EXIT_FAILURE);
 }
@@ -108,8 +107,9 @@ static void parser(int argc, char *argv[])
 		}
 	}
 
-	if (flag == 0)
+	if (flag == 0) {
 		flag |= ALL;
+	}
 }
 
 void sniff_network(int argc, char *argv[])
@@ -124,9 +124,10 @@ void sniff_network(int argc, char *argv[])
 		memset(buffer, 0, BUFF_SIZE);
 		total = recvfrom(sockfd, buffer, BUFF_SIZE, 0, NULL, NULL);
 		if (total < 0 || total == 0) {
-			err_msg("listen.c", "sniff_network", __LINE__, errno);
+			err_msg("sniff.c", "sniff_network", __LINE__, errno);
 			break;
 		}
+
 		output_packet(buffer, flag);
 	}
 

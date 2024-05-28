@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -14,7 +13,6 @@
 #include <net/ethernet.h>
 #include <linux/if_packet.h>
 #include <net/if.h>
-
 #include "helpers.h"
 
 unsigned short checksum(unsigned short *ptr, int nbytes)
@@ -52,8 +50,9 @@ void err_exit(char *msg)
 
 void fill_device(struct sockaddr_ll *device, char *iface, unsigned char *mac)
 {
-        if ((device->sll_ifindex = if_nametoindex(iface)) == 0)
-                err_msg("eth.c", "fill_device", __LINE__, errno);
+        if ((device->sll_ifindex = if_nametoindex(iface)) == 0) {
+                err_msg("helpers.c", "fill_device", __LINE__, errno);
+	}
 
         device->sll_family = AF_PACKET;
         memcpy(device->sll_addr, mac, ETHER_ADDR_LEN);
@@ -67,13 +66,14 @@ unsigned int get_address()
         unsigned int ip;
 
         if (getifaddrs(&addr) == -1) {
-                err_msg("get_addr.c", "get_address", __LINE__, errno);
+                err_msg("helpers.c", "get_address", __LINE__, errno);
                 return -1;
         }
 
         for (temp = addr; temp != NULL; temp = temp->ifa_next) {
-                if (temp->ifa_addr == NULL)
+                if (temp->ifa_addr == NULL) {
                         continue;
+		}
 
                 if (temp->ifa_addr->sa_family == AF_INET &&
                     strcmp(temp->ifa_name, "lo")) {
@@ -96,19 +96,21 @@ int list_interfaces()
         int ind = 0;
 
         if (getifaddrs(&addr) == -1) {
-                err_msg("get_addr.c", "list_interfaces", __LINE__, errno);
+                err_msg("helpers.c", "list_interfaces", __LINE__, errno);
                 return -1;
         }
 
         for (temp = addr; temp != NULL; temp = temp->ifa_next) {
-                if (temp->ifa_addr == NULL)
+                if (temp->ifa_addr == NULL) {
                         continue;
+		}
 
                 ip_addr = (struct sockaddr_in *)temp->ifa_addr;
 
-                if (temp->ifa_addr->sa_family == AF_INET)
+                if (temp->ifa_addr->sa_family == AF_INET) {
                         printf("[%d] [%s] -> [%s]\n", ind, temp->ifa_name,
                                inet_ntoa(ip_addr->sin_addr));
+		}
                 ind += 1;
         }
 
@@ -117,7 +119,7 @@ int list_interfaces()
         return 0;
 }
 
-void read_mac_address(char *data, char *mac)
+void read_mac_address(char *data, unsigned char *mac)
 {
         sscanf(data, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx:", &mac[0], &mac[1],
                &mac[2], &mac[3], &mac[4], &mac[5]);

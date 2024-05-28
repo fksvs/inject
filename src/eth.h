@@ -1,5 +1,5 @@
-#ifndef ETH
-#define ETH
+#ifndef ETH_H
+#define ETH_H
 
 #include "type.h"
 

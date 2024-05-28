@@ -3,7 +3,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -14,7 +13,6 @@
 #include <net/ethernet.h>
 #include <linux/if_packet.h>
 #include <net/if.h>
-
 #include "eth.h"
 #include "network.h"
 #include "type.h"
@@ -61,30 +59,32 @@ static void validate_eth_packet()
 	char zero[BUFF_SIZE];
 	memset(zero, 0, BUFF_SIZE);
 
-	if (!iface)
+	if (!iface) {
 		err_exit("network interface not specified.");
+	}
 
 	if (!memcmp(&eth.src, zero, ETHER_ADDR_LEN)) {
 		struct ifreq ifr;
 		memset(&ifr, 0, sizeof(struct ifreq));
 
 		memcpy(ifr.ifr_name, iface, strlen(iface));
-		if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == -1)
-			err_msg("eth.c", "validate_eth_packet", __LINE__,
-				errno);
+		if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == -1) {
+			err_msg("eth.c", "validate_eth_packet", __LINE__, errno);
+		}
 
 		memcpy(&eth.src, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 	}
 
-	if (!memcmp(&eth.dst, zero, ETHER_ADDR_LEN))
+	if (!memcmp(&eth.dst, zero, ETHER_ADDR_LEN)) {
 		memset(&eth.dst, 0xff, ETHER_ADDR_LEN);
+	}
 }
 
 static void usage()
 {
 	general_usage();
 	eth_usage();
-	printf("\n");
+	fprintf(stderr, "\n");
 
 	exit(EXIT_FAILURE);
 }
@@ -92,9 +92,13 @@ static void usage()
 static void parse_eth(int argc, char *argv[])
 {
 	int opt;
+	unsigned short protocol;
+	char *file_name;
+	unsigned char src_mac[6], dst_mac[6];
 
-	if (argc < 3)
+	if (argc < 3) {
 		usage();
+	}
 
 	while ((opt = getopt(argc, argv, "i:c:vhM:K:p:a:")) != -1) {
 		switch (opt) {
@@ -109,22 +113,21 @@ static void parse_eth(int argc, char *argv[])
 			break;
 		case 'h':
 			usage();
+			break;
 		case 'M':
-			char src_mac[6];
 			read_mac_address(optarg, src_mac);
 			memcpy(eth.src, src_mac, ETHER_ADDR_LEN);
 			break;
 		case 'K':
-			char dst_mac[6];
 			read_mac_address(optarg, dst_mac);
 			memcpy(eth.dst, dst_mac, ETHER_ADDR_LEN);
 			break;
 		case 'p':
-			unsigned short protocol = atoi(optarg);
+			protocol = atoi(optarg);
 			eth.protocol = htons(protocol);
 			break;
 		case 'a':
-			char *file_name = optarg;
+			file_name = optarg;
 			fill_payload(file_name);
 			break;
 		case '?':
@@ -139,8 +142,9 @@ void inject_eth(int argc, char *argv[])
 	memset(&eth, 0, sizeof(eth_hdr));
 	memset(&device, 0, sizeof(struct sockaddr_ll));
 
-	if ((sockfd = init_packet_socket()) == -1)
+	if ((sockfd = init_packet_socket()) == -1) {
 		exit(EXIT_FAILURE);
+	}
 
 	parse_eth(argc, argv);
 	validate_eth_packet();
@@ -150,8 +154,9 @@ void inject_eth(int argc, char *argv[])
 	int len = sizeof(eth_hdr) + payload_size;
 	send_packet(sockfd, buffer, len, &device, count);
 
-	if (verbose)
+	if (verbose) {
 		print_eth(&eth);
+	}
 
 	close_sock(sockfd);
 	exit(EXIT_SUCCESS);

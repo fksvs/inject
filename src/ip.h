@@ -1,5 +1,5 @@
-#ifndef IP
-#define IP
+#ifndef IP_H
+#define IP_H
 
 #include <sys/types.h>
 

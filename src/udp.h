@@ -1,5 +1,5 @@
-#ifndef UDP
-#define UDP
+#ifndef UDP_H
+#define UDP_H
 
 void build_udp(char *buffer, char *payload, size_t payload_size,
 	       unsigned short src, unsigned short dst);

@@ -2,12 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
 #include "network.h"
 #include "output.h"
 #include "type.h"
@@ -50,23 +48,25 @@ void build_ip(char *buffer, size_t payload_size, unsigned char *src,
 	if (!src) {
 		struct in_addr addr = { get_address() };
 		inet_pton(AF_INET, (const char *)inet_ntoa(addr), &iph->src);
-	} else
+	} else {
 		inet_pton(AF_INET, (const char *)src, &iph->src);
+	}
 	inet_pton(AF_INET, (const char *)dst, &iph->dst);
 	iph->check = checksum((unsigned short *)iph, iph->length);
 }
 
 static void validate_ip()
 {
-	if (!dst_addr)
+	if (!dst_addr) {
 		err_exit("destination address not specified.");
+	}
 }
 
 static void usage()
 {
 	general_usage();
 	ip_usage();
-	printf("\n");
+	fprintf(stderr, "\n");
 
 	exit(EXIT_FAILURE);
 }
@@ -75,8 +75,9 @@ static void parser(int argc, char *argv[])
 {
 	int opt;
 
-	if (argc < 3)
+	if (argc < 3) {
 		usage();
+	}
 
 	while ((opt = getopt(argc, argv, "i:c:vhS:D:T:o:")) != -1) {
 		switch (opt) {
@@ -91,6 +92,7 @@ static void parser(int argc, char *argv[])
 			break;
 		case 'h':
 			usage();
+			break;
 		case 'S':
 			src_addr = (unsigned char *)optarg;
 			break;
@@ -120,13 +122,15 @@ void inject_ip(int argc, char *argv[])
 	memset(buffer, 0, BUFF_SIZE);
 	memset(&sock_dst, 0, sizeof(struct sockaddr_in));
 
-	if ((sockfd = init_socket()) == -1)
+	if ((sockfd = init_socket()) == -1) {
 		exit(EXIT_FAILURE);
+	}
 
 	validate_ip();
 
-	if (iface)
+	if (iface) {
 		bind_iface(sockfd, iface);
+	}
 
 	sock_dst.sin_family = AF_INET;
 	inet_pton(AF_INET, (const char *)dst_addr, &sock_dst.sin_addr.s_addr);

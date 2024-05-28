@@ -1,5 +1,5 @@
-#ifndef ICMP
-#define ICMP
+#ifndef ICMP_H
+#define ICMP_H
 
 void build_icmp(char *buffer, unsigned char type, unsigned char code,
 		unsigned short seq);

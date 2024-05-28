@@ -2,7 +2,7 @@
 
 void main_usage()
 {
-	printf("\n usage : ./inject [protocol/mode] [options]\n\n protocols :\n\
+	fprintf(stderr ,"\n usage : ./inject [protocol/mode] [options]\n\n protocols :\n\
 \teth : eth packets\n\
 \tarp : arp packets\n\
 \tip : ip packets\n\
@@ -18,7 +18,7 @@ void main_usage()
 
 void general_usage()
 {
-	printf("\n general options :\n\n\
+	fprintf(stderr, "\n general options :\n\n\
 \t-i [interface] : network interface\n\
 \t-c [count] : number of packets to send\n\
 \t-v : verbose\n\
@@ -27,7 +27,7 @@ void general_usage()
 
 void sniff_usage()
 {
-	printf("\n sniff options :\n\n\
+	fprintf(stderr, "\n sniff options :\n\n\
 \t-e : ethernet\n\
 \t-a : arp\n\
 \t-i : ip\n\
@@ -38,7 +38,7 @@ void sniff_usage()
 
 void eth_usage()
 {
-	printf("\n ETH options :\n\n\
+	fprintf(stderr, "\n ETH options :\n\n\
 \t-M [mac address] : source mac address\n\
 \t-K [mac address] : destination mac address\n\
 \t-p [protocol] : protocol\n\
@@ -47,7 +47,7 @@ void eth_usage()
 
 void arp_usage()
 {
-	printf("\n ARP options :\n\n\
+	fprintf(stderr, "\n ARP options :\n\n\
 \t-M [mac address] : source mac address\n\
 \t-K [mac address] : destination mac address\n\
 \t-S [ip address] : source ip address\n\
@@ -57,7 +57,7 @@ void arp_usage()
 
 void ip_usage()
 {
-	printf("\n IP options :\n\n\
+	fprintf(stderr, "\n IP options :\n\n\
 \t-S [address] : source address\n\
 \t-D [address] : destination address\n\
 \t-T [ttl] : ttl\n\
@@ -66,14 +66,14 @@ void ip_usage()
 
 void icmp_usage()
 {
-	printf("\n ICMP options :\n\n\
+	fprintf(stderr, "\n ICMP options :\n\n\
 \t-t [type] : icmp type\n\
 \t-C [code] : icmp code\n");
 }
 
 void tcp_usage()
 {
-	printf("\n TCP options :\n\n\
+	fprintf(stderr, "\n TCP options :\n\n\
 \t-s [port] : source port\n\
 \t-d [port] : destination port\n\
 \t-f [flag] : tcp flag (syn, ack, psh, fin, rst, urg)\n\
@@ -82,7 +82,7 @@ void tcp_usage()
 
 void udp_usage()
 {
-	printf("\n UDP options :\n\n\
+	fprintf(stderr, "\n UDP options :\n\n\
 \t-s [port] : source port\n\
 \t-d [port] : destination port\n\
 \t-a [file] : payload file\n");

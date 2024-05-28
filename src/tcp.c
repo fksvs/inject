@@ -3,12 +3,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
 #include "network.h"
 #include "fileio.h"
 #include "output.h"
@@ -77,8 +75,9 @@ void build_tcp(char *buffer, char *payload, size_t payload_size,
 
 static void validate_tcp()
 {
-	if (!dst_addr)
+	if (!dst_addr) {
 		err_exit("destination address not specified.");
+	}
 }
 
 static void usage()
@@ -86,7 +85,7 @@ static void usage()
 	general_usage();
 	ip_usage();
 	tcp_usage();
-	printf("\n");
+	fprintf(stderr, "\n");
 
 	exit(EXIT_FAILURE);
 }
@@ -95,8 +94,9 @@ static void parser(int argc, char *argv[])
 {
 	int opt;
 
-	if (argc < 3)
+	if (argc < 3) {
 		usage();
+	}
 
 	while ((opt = getopt(argc, argv, "i:c:vhS:D:T:o:s:d:f:a:")) != -1) {
 		switch (opt) {
@@ -111,6 +111,7 @@ static void parser(int argc, char *argv[])
 			break;
 		case 'h':
 			usage();
+			break;
 		case 'S':
 			src_addr = (unsigned char *)optarg;
 			break;
@@ -165,21 +166,24 @@ void inject_tcp(int argc, char *argv[])
 	memset(buffer, 0, BUFF_SIZE);
 	memset(&sock_dst, 0, sizeof(struct sockaddr_in));
 
-	if ((sockfd = init_socket()) == -1)
+	if ((sockfd = init_socket()) == -1) {
 		exit(EXIT_FAILURE);
+	}
 
 	validate_tcp();
 
-	if (iface)
+	if (iface) {
 		bind_iface(sockfd, iface);
+	}
 
 	sock_dst.sin_family = AF_INET;
 	inet_pton(AF_INET, (const char *)dst_addr, &sock_dst.sin_addr.s_addr);
 	sock_dst.sin_port = dst_port;
 
 	if (file_name) {
-		if ((payload = read_file(file_name)) == NULL)
+		if ((payload = read_file(file_name)) == NULL) {
 			exit(EXIT_FAILURE);
+		}
 		payload_size = strlen(payload);
 	}
 
@@ -198,8 +202,9 @@ void inject_tcp(int argc, char *argv[])
 		print_tcp(tcph);
 	}
 
-	if (file_name)
+	if (file_name) {
 		free(payload);
+	}
 
 	close_sock(sockfd);
 	exit(EXIT_SUCCESS);

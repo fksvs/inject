@@ -2,10 +2,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <fcntl.h>
-
 #include "fileio.h"
 #include "helpers.h"
 
@@ -16,11 +14,11 @@ char *read_file(char *file_name)
 	struct stat st;
 
 	if ((fd = open(file_name, O_RDONLY)) == -1) {
-		err_msg("data.c", "read_file", __LINE__, errno);
+		err_msg("fileio.c", "read_file", __LINE__, errno);
 		return NULL;
 	}
 	if (fstat(fd, &st) == -1) {
-		err_msg("data.c", "read_file", __LINE__, errno);
+		err_msg("fileio.c", "read_file", __LINE__, errno);
 		return NULL;
 	}
 
@@ -28,7 +26,7 @@ char *read_file(char *file_name)
 	memset(payload, 0, st.st_size);
 
 	if (read(fd, payload, st.st_size) == -1) {
-		err_msg("data.c", "read_file", __LINE__, errno);
+		err_msg("fileio.c", "read_file", __LINE__, errno);
 		return NULL;
 	}
 

@@ -1,5 +1,5 @@
-#ifndef TCP
-#define TCP
+#ifndef TCP_H
+#define TCP_H
 
 void build_tcp(char *buffer, char *payload, size_t payload_size,
 	       unsigned short src, unsigned short dst, unsigned char flag,

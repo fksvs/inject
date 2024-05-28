@@ -1,8 +1,6 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include "eth.h"
 #include "arp.h"
 #include "ip.h"
@@ -51,8 +49,10 @@ void parser(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	if (getuid())
+	if (geteuid()) {
 		err_exit("permission denied.");
+	}
+
 	parser(argc, argv);
 
 	return 0;
