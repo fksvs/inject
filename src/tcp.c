@@ -59,8 +59,14 @@ void build_tcp(char *buffer, char *payload, size_t payload_size,
 	ip_hdr *iph = (ip_hdr *)buffer;
 	tcp_hdr *tcph = (tcp_hdr *)(buffer + sizeof(ip_hdr));
 	char *ptr = (buffer + sizeof(ip_hdr) + sizeof(tcp_hdr));
+	size_t max_payload = BUFF_SIZE - sizeof(ip_hdr) - sizeof(tcp_hdr);
 
-	strncat(ptr, payload, payload_size);
+	if (payload != NULL && payload_size > 0) {
+		if (payload_size > max_payload) {
+			payload_size = max_payload;
+		}
+		memcpy(ptr, payload, payload_size);
+	}
 	tcph->src = (src) ? htons(src) : htons(rand_port());
 	tcph->dst = (dst) ? htons(dst) : htons(rand_port());
 	tcph->seq = seq;
