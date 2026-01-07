@@ -145,6 +145,7 @@ static void parse_arp(int argc, char *argv[])
 		case 'r':
 			oper = atoi(optarg);
 			arp.oper = htons(oper);
+			break;
 		case '?':
 			break;
 		}

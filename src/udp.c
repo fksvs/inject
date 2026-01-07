@@ -58,8 +58,14 @@ void build_udp(char *buffer, char *payload, size_t payload_size,
 	ip_hdr *iph = (ip_hdr *)buffer;
 	udp_hdr *udph = (udp_hdr *)(buffer + sizeof(ip_hdr));
 	char *ptr = (buffer + sizeof(ip_hdr) + sizeof(udp_hdr));
+	size_t max_payload = BUFF_SIZE - sizeof(ip_hdr) - sizeof(udp_hdr);
 
-	strncat(ptr, payload, payload_size);
+	if (payload != NULL && payload_size > 0) {
+		if (payload_size > max_payload) {
+			payload_size = max_payload;
+		}
+		memcpy(ptr, payload, payload_size);
+	}
 	udph->src = (src) ? htons(src) : htons(rand_port());
 	udph->dst = (dst) ? htons(dst) : htons(rand_port());
 	udph->length = htons(sizeof(udp_hdr) + payload_size);
