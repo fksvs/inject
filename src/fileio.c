@@ -19,14 +19,23 @@ char *read_file(char *file_name)
 	}
 	if (fstat(fd, &st) == -1) {
 		err_msg("fileio.c", "read_file", __LINE__, errno);
+		close(fd);
 		return NULL;
 	}
 
-	payload = malloc(st.st_size);
-	memset(payload, 0, st.st_size);
+	/* Allocate buffer with extra byte for null terminator (file content is used as string) */
+	payload = malloc(st.st_size + 1);
+	if (payload == NULL) {
+		err_msg("fileio.c", "read_file", __LINE__, errno);
+		close(fd);
+		return NULL;
+	}
+	memset(payload, 0, st.st_size + 1);
 
 	if (read(fd, payload, st.st_size) == -1) {
 		err_msg("fileio.c", "read_file", __LINE__, errno);
+		free(payload);
+		close(fd);
 		return NULL;
 	}
 

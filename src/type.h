@@ -1,23 +1,29 @@
-#ifndef TYPE
-#define TYPE
+#ifndef TYPE_H
+#define TYPE_H
 
+/* Buffer size for packet operations */
 #define BUFF_SIZE 65535
+
+/* Default TTL for IP packets */
 #define DEFAULT_TTL 248
 
-#define ETH_FLAG 1
-#define ARP_FLAG 2
+/* Protocol flags for sniffing */
+#define ETH_FLAG  1
+#define ARP_FLAG  2
 #define ICMP_FLAG 4
-#define IP_FLAG 8
-#define TCP_FLAG 16
-#define UDP_FLAG 32
-#define ALL 63
+#define IP_FLAG   8
+#define TCP_FLAG  16
+#define UDP_FLAG  32
+#define ALL       63
 
+/* Ethernet header structure */
 typedef struct {
 	unsigned char dst[6];
 	unsigned char src[6];
 	unsigned short protocol;
 } eth_hdr;
 
+/* ARP header structure */
 typedef struct {
 	unsigned short htype;
 	unsigned short ptype;
@@ -30,6 +36,7 @@ typedef struct {
 	unsigned char dst_ip[4];
 } arp_hdr;
 
+/* IP header structure */
 typedef struct {
 	unsigned char ver_ihl;
 	unsigned char service;
@@ -43,6 +50,7 @@ typedef struct {
 	unsigned char dst[4];
 } ip_hdr;
 
+/* ICMP header structure */
 typedef struct {
 	unsigned char type;
 	unsigned char code;
@@ -51,6 +59,7 @@ typedef struct {
 	unsigned short seq;
 } icmp_hdr;
 
+/* TCP header structure */
 typedef struct {
 	unsigned short src;
 	unsigned short dst;
@@ -63,6 +72,7 @@ typedef struct {
 	unsigned short urgp;
 } tcp_hdr;
 
+/* UDP header structure */
 typedef struct {
 	unsigned short src;
 	unsigned short dst;
@@ -70,6 +80,7 @@ typedef struct {
 	unsigned short check;
 } udp_hdr;
 
+/* Pseudo header for checksum calculation */
 typedef struct {
 	unsigned char src[4];
 	unsigned char dst[4];
@@ -78,4 +89,4 @@ typedef struct {
 	unsigned short length;
 } psd_hdr;
 
-#endif
+#endif /* TYPE_H */

@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include <net/ethernet.h>
 #include <linux/if_ether.h>
 #include "network.h"
@@ -39,7 +40,7 @@ static void output_packet(char *buffer, int fl)
 		}
 
 		switch (iph->protocol) {
-		case 1:
+		case IPPROTO_ICMP:
 			if ((fl & ICMP_FLAG) == ICMP_FLAG) {
 				icmp_hdr *icmph =
 					(icmp_hdr *)(buffer + sizeof(eth_hdr) +
@@ -47,7 +48,7 @@ static void output_packet(char *buffer, int fl)
 				print_icmp(icmph);
 			}
 			break;
-		case 6:
+		case IPPROTO_TCP:
 			if ((fl & TCP_FLAG) == TCP_FLAG) {
 				tcp_hdr *tcph =
 					(tcp_hdr *)(buffer + sizeof(eth_hdr) +
@@ -55,7 +56,7 @@ static void output_packet(char *buffer, int fl)
 				print_tcp(tcph);
 			}
 			break;
-		case 17:
+		case IPPROTO_UDP:
 			if ((fl & UDP_FLAG) == UDP_FLAG) {
 				udp_hdr *udph =
 					(udp_hdr *)(buffer + sizeof(eth_hdr) +
